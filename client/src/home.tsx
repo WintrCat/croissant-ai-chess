@@ -1,6 +1,6 @@
 import { Button, Group } from "@mantine/core";
-import { Chessboard } from "react-chessboard";
 
+import Board from "./Board";
 import styles from "./home.module.css";
 
 function Home() {
@@ -9,9 +9,7 @@ function Home() {
             AI Piece Chess
         </span>
 
-        <Chessboard options={{
-            boardStyle: { width: "min(700px, 100%)" }
-        }}/>
+        <Board/>
 
         <Group>
             <Button>
