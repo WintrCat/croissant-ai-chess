@@ -9,12 +9,15 @@ import {
     Role,
     ROLE_CHARS,
     RoleChar,
+    Square,
     squareFile,
+    SquareName,
     SquareSet
 } from "chessops";
 import { makeFen } from "chessops/fen";
 
 import styles from "./Board.module.css";
+import { playBoardSound } from "./lib/board-sounds";
 
 type ColourChar = "w" | "b";
 type Promotion = NormalMove & { colour: ColourChar };
@@ -32,10 +35,14 @@ function Board() {
     const [ promotionOpen, promotionDialog ] = useDisclosure();
     const [ promotionMove, setPromotionMove ] = useState<Promotion>();
 
+    const [ held, setHeld ] = useState<Square>();
+
     const handlePromotion = (piece: Role) => {
         if (!promotionMove) return;
+        const move: NormalMove = { ...promotionMove, promotion: piece };
 
-        position.play({ ...promotionMove, promotion: piece });
+        playBoardSound(position, move);
+        position.play(move);
         setPosition(position.clone());
 
         promotionDialog.close();
@@ -60,11 +67,16 @@ function Board() {
             squareStyles: Object.fromEntries(highlighted.map(
                 square => [square, { backgroundColor: "#eb6150cc" }]
             )),
-            onPieceDrag: () => {
+            onPieceDrag: ({ square }) => {
+                console.log(`square: ${square}`);
+                setHeld(parseSquare(square as SquareName));
+
                 setHighlighted([]);
                 promotionDialog.close();
             },
             onPieceDrop: ({ piece, sourceSquare, targetSquare }) => {
+                setHeld(undefined);
+
                 const from = parseSquare(sourceSquare);
                 const to = targetSquare && parseSquare(targetSquare);
                 if (!from || !to) return false;
@@ -85,11 +97,29 @@ function Board() {
                     return false;
                 }
 
+                playBoardSound(position, move);
                 position.play(move);
                 setPosition(position.clone());
 
                 return true;
-            }
+            },
+            squareRenderer: ({ square, children }) => {
+                const parsedSquare = parseSquare(square as SquareName);
+
+                const isDestination = held && position.dests(held)
+                    .has(parsedSquare);
+                const hasPiece = !!position.board.get(parsedSquare);
+                
+                return <div className={styles.square}>
+                    {isDestination && <div className={hasPiece
+                        ? styles.captureDestCircle
+                        : styles.destCircle
+                    }/>}
+
+                    {children}
+                </div>;
+            },
+            dropSquareStyle: { boxShadow: "0 0 0px 5px #fff inset" }
         }}/>
 
         {promotionOpen && promotionMove && <div

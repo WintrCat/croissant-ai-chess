@@ -26,3 +26,35 @@
 .promotionPiece:hover {
     background-color: rgba(0, 0, 0, 0.15);
 }
+
+.square {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+.destCircle {
+    position: absolute;
+    top: 35%;
+    left: 35%;
+    width: 30%;
+    height: 30%;
+
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.15);
+}
+
+.captureDestCircle {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+
+    border-radius: 50%;
+    border: 6px solid rgba(0, 0, 0, 0.15);
+    background-color: rgba(0, 0, 0, 0);
+}
