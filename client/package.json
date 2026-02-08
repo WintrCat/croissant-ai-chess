@@ -13,9 +13,11 @@
     "vite-tsconfig-paths": "^6.0.5"
   },
   "dependencies": {
+    "@mantine/core": "^8.3.14",
     "@react-router/node": "^7.13.0",
     "isbot": "^5",
     "react": "^19.2.4",
+    "react-chessboard": "^5.8.6",
     "react-dom": "^19.2.4",
     "react-router": "^7.13.0"
   }
