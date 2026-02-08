@@ -64,9 +64,6 @@ function Board() {
                 setHighlighted([]);
                 promotionDialog.close();
             },
-            squareStyles: Object.fromEntries(highlighted.map(
-                square => [square, { backgroundColor: "#eb6150cc" }]
-            )),
             onPieceDrag: ({ square }) => {
                 console.log(`square: ${square}`);
                 setHeld(parseSquare(square as SquareName));
@@ -110,7 +107,10 @@ function Board() {
                     .has(parsedSquare);
                 const hasPiece = !!position.board.get(parsedSquare);
                 
-                return <div className={styles.square}>
+                return <div className={styles.square} style={{
+                    backgroundColor: highlighted.includes(square)
+                        ? "#eb6150cc" : undefined
+                }}>
                     {isDestination && <div className={hasPiece
                         ? styles.captureDestCircle
                         : styles.destCircle
