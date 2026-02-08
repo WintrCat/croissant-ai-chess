@@ -16,8 +16,8 @@ import {
 } from "chessops";
 import { makeFen } from "chessops/fen";
 
-import styles from "./Board.module.css";
 import { playBoardSound } from "./lib/board-sounds";
+import styles from "./Board.module.css";
 
 type ColourChar = "w" | "b";
 type Promotion = NormalMove & { colour: ColourChar };
