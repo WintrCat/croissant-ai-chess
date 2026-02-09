@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Chessboard, defaultPieces } from "react-chessboard";
 import { useDisclosure } from "@mantine/hooks";
 import {
@@ -28,9 +28,12 @@ function getRoleChars(colour: ColourChar, promotable = true) {
         .map(char => `${colour}${char.toUpperCase()}`);
 }
 
-function Board() {
-    const [ position, setPosition ] = useState(Chess.default());
+interface BoardProps {
+    position: Chess;
+    setPosition: (position: Chess) => void;
+}
 
+function Board({ position, setPosition }: BoardProps) {
     const [ highlighted, setHighlighted ] = useState<string[]>([]);
     const [ promotionOpen, promotionDialog ] = useDisclosure();
     const [ promotionMove, setPromotionMove ] = useState<Promotion>();
@@ -65,7 +68,6 @@ function Board() {
                 promotionDialog.close();
             },
             onPieceDrag: ({ square }) => {
-                console.log(`square: ${square}`);
                 setHeld(parseSquare(square as SquareName));
 
                 setHighlighted([]);
