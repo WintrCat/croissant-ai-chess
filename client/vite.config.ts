@@ -11,5 +11,13 @@ const port = Number(
 
 export default defineConfig({
     plugins: [reactRouter(), tsConfigPaths()],
-    server: { port }
+    server: {
+        port: port,
+        proxy: process.env.ORIGIN ? {
+            "/api": {
+                target: process.env.ORIGIN,
+                changeOrigin: true
+            }
+        } : undefined
+    }
 });

@@ -1,9 +1,8 @@
-import React, { useState } from "react";
+import React, { cloneElement, isValidElement, ReactElement, useState } from "react";
 import { Chessboard, defaultPieces } from "react-chessboard";
 import { useDisclosure } from "@mantine/hooks";
 import {
     charToRole,
-    Chess,
     NormalMove,
     parseSquare,
     Role,
@@ -12,10 +11,14 @@ import {
     Square,
     squareFile,
     SquareName,
-    SquareSet
+    SquareSet,
+    makeSquare
 } from "chessops";
 import { makeFen } from "chessops/fen";
+import { produce } from "immer";
 
+import { BoardState } from "./types/BoardState";
+import { LLM_LOGOS } from "./constants/llms";
 import { playBoardSound } from "./lib/board-sounds";
 import styles from "./Board.module.css";
 
@@ -29,24 +32,40 @@ function getRoleChars(colour: ColourChar, promotable = true) {
 }
 
 interface BoardProps {
-    position: Chess;
-    setPosition: (position: Chess) => void;
+    onMovePlayed?: (move: NormalMove) => void;
+    state: BoardState;
+    pushState: (state: BoardState) => void;
 }
 
-function Board({ position, setPosition }: BoardProps) {
+function Board({ onMovePlayed, state, pushState }: BoardProps) {
     const [ highlighted, setHighlighted ] = useState<string[]>([]);
     const [ promotionOpen, promotionDialog ] = useDisclosure();
     const [ promotionMove, setPromotionMove ] = useState<Promotion>();
 
     const [ held, setHeld ] = useState<Square>();
 
+    const playMove = (move: NormalMove) => {
+        const copy = state.position.clone();
+
+        playBoardSound(copy, move);
+        copy.play(move);
+        onMovePlayed?.(move);
+        pushState({
+            position: copy,
+            llms: produce(state.llms, draft => {
+                const llm = draft[makeSquare(move.from)];
+                delete draft[makeSquare(move.from)];
+
+                if (!llm) return draft;
+                draft[makeSquare(move.to)] = llm;
+                return draft;
+            })
+        });
+    };
+
     const handlePromotion = (piece: Role) => {
         if (!promotionMove) return;
-        const move: NormalMove = { ...promotionMove, promotion: piece };
-
-        playBoardSound(position, move);
-        position.play(move);
-        setPosition(position.clone());
+        playMove({ ...promotionMove, promotion: piece });
 
         promotionDialog.close();
         setPromotionMove(undefined);
@@ -54,7 +73,7 @@ function Board({ position, setPosition }: BoardProps) {
 
     return <div className={styles.wrapper}>
         <Chessboard options={{
-            position: makeFen(position.toSetup()),
+            position: makeFen(state.position.toSetup()),
             dragActivationDistance: 0,
             draggingPieceGhostStyle: { opacity: 0 },
             onSquareRightClick: ({ square }) => {
@@ -80,7 +99,7 @@ function Board({ position, setPosition }: BoardProps) {
                 const to = targetSquare && parseSquare(targetSquare);
                 if (!from || !to) return false;
 
-                const dests = position.dests(from);
+                const dests = state.position.dests(from);
                 if (!dests.has(to)) return false;
 
                 const move: NormalMove = { from, to };
@@ -96,18 +115,16 @@ function Board({ position, setPosition }: BoardProps) {
                     return false;
                 }
 
-                playBoardSound(position, move);
-                position.play(move);
-                setPosition(position.clone());
-
+                playMove(move);
                 return true;
             },
             squareRenderer: ({ square, children }) => {
                 const parsedSquare = parseSquare(square as SquareName);
+                const llm = state.llms[square as SquareName];
 
-                const isDestination = held && position.dests(held)
+                const isDestination = held && state.position.dests(held)
                     .has(parsedSquare);
-                const hasPiece = !!position.board.get(parsedSquare);
+                const hasPiece = !!state.position.board.get(parsedSquare);
                 
                 return <div className={styles.square} style={{
                     backgroundColor: highlighted.includes(square)
@@ -119,6 +136,12 @@ function Board({ position, setPosition }: BoardProps) {
                     }/>}
 
                     {children}
+
+                    {llm && <img
+                        src={LLM_LOGOS[llm]}
+                        className={styles.llmLogo}
+                        draggable={false}
+                    />}
                 </div>;
             },
             dropSquareStyle: { boxShadow: "0 0 0px 5px #fff inset" }

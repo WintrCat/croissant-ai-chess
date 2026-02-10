@@ -2,16 +2,22 @@
     "name": "server",
     "type": "module",
     "scripts": {
-        "build": "tsc",
+        "build": "tsc && tsc-alias -f",
         "start": "node build/index.js",
-        "dev": "tsc && node build/index.js"
+        "dev": "pnpm build && pnpm start"
     },
     "dependencies": {
         "@react-router/express": "^7.13.0",
+        "chessops": "^0.15.0",
         "dotenv": "^17.2.3",
-        "express": "^5.2.1"
+        "es-toolkit": "^1.44.0",
+        "express": "^5.2.1",
+        "http-status-codes": "^2.3.0",
+        "openai": "^6.18.0",
+        "zod": "^4.3.6"
     },
     "devDependencies": {
-        "@types/express": "^5.0.6"
+        "@types/express": "^5.0.6",
+        "tsc-alias": "^1.8.16"
     }
 }

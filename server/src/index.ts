@@ -4,6 +4,8 @@ import dotenv from "dotenv";
 import cluster from "cluster";
 import { cpus } from "os";
 
+import opinionsRouter from "./opinions";
+
 dotenv.config({ path: "../.env", quiet: true });
 
 const port = new URL(process.env.ORIGIN || "").port || 8080;
@@ -18,6 +20,7 @@ async function main() {
     const app = express();
 
     app.use("/", express.static("../client/build/client"));
+    app.use("/", opinionsRouter);
     
     app.all("*any", createRequestHandler({
         build: () => import("../../client/build/server/index.js" as any)
