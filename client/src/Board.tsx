@@ -18,7 +18,7 @@ import { makeFen } from "chessops/fen";
 import { produce } from "immer";
 
 import { BoardState } from "./types/BoardState";
-import { LLM_LOGOS } from "./constants/llms";
+import { LLMS } from "./constants/llms";
 import { playBoardSound } from "./lib/board-sounds";
 import styles from "./Board.module.css";
 
@@ -43,6 +43,7 @@ function Board({ onMovePlayed, state, pushState }: BoardProps) {
     const [ promotionMove, setPromotionMove ] = useState<Promotion>();
 
     const [ held, setHeld ] = useState<Square>();
+    const [ hovered, setHovered ] = useState<Square>();
 
     const playMove = (move: NormalMove) => {
         const copy = state.position.clone();
@@ -76,6 +77,10 @@ function Board({ onMovePlayed, state, pushState }: BoardProps) {
             position: makeFen(state.position.toSetup()),
             dragActivationDistance: 0,
             draggingPieceGhostStyle: { opacity: 0 },
+            onMouseOverSquare: ({ square }) => {
+                setHovered(parseSquare(square));
+            },
+            onMouseOutSquare: () => setHovered(undefined),
             onSquareRightClick: ({ square }) => {
                 setHighlighted(prev => prev.includes(square)
                     ? prev.filter(sq => sq != square)
@@ -138,12 +143,19 @@ function Board({ onMovePlayed, state, pushState }: BoardProps) {
                     {children}
 
                     {llm && <img
-                        src={LLM_LOGOS[llm]}
+                        src={LLMS[llm].logo}
                         className={styles.llmLogo}
                         draggable={false}
                     />}
+
+                    {llm && hovered == parsedSquare && <span
+                        className={styles.llmName}
+                    >
+                        {LLMS[llm].name}
+                    </span>}
                 </div>;
             },
+            boardStyle: { overflow: "visible" },
             dropSquareStyle: { boxShadow: "0 0 0px 5px #fff inset" }
         }}/>
 

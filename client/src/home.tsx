@@ -1,23 +1,24 @@
-import { Alert, Button, Group } from "@mantine/core";
+import { Route } from "./+types/home";
+
+import { Alert, Button, Center, Group, Loader } from "@mantine/core";
 import { useListState } from "@mantine/hooks";
-import { Chess, makeSquare, NormalMove } from "chessops";
+import { Chess, NormalMove } from "chessops";
 import { makeFen } from "chessops/fen";
-import { produce } from "immer";
 
 import { BoardState } from "./types/BoardState";
-import { DEFAULT_PIECES } from "./constants/llms";
+import { generateDefaultPieces } from "./constants/llms";
 import Board from "./Board";
 import styles from "./home.module.css";
 
-const DEFAULT_STATE: BoardState = {
-    position: Chess.default(),
-    llms: DEFAULT_PIECES
-};
+export function clientLoader() {
+    return (): BoardState => ({
+        position: Chess.default(),
+        llms: generateDefaultPieces()
+    });
+}
 
-function Home() {
-    const [ stateHistory, setStateHistory ] = useListState([DEFAULT_STATE]);
-
-    console.log(stateHistory.map(state => makeFen(state.position.toSetup())));
+function Home({ loaderData: defaultState }: Route.ComponentProps) {
+    const [ stateHistory, setStateHistory ] = useListState([defaultState()]);
 
     const latestState = stateHistory.at(-1);
     if (!latestState) return <Alert color="red">
@@ -68,12 +69,18 @@ function Home() {
             </Button>
 
             <Button color="red" onClick={() => {
-                setStateHistory.setState([DEFAULT_STATE]);
+                setStateHistory.setState([defaultState()]);
             }}>
                 Reset Game
             </Button>
         </Group>
     </div>;
+}
+
+export function HydrateFallback() {
+    return <Center h="100vh">
+        <Loader/>
+    </Center>;
 }
 
 export default Home;

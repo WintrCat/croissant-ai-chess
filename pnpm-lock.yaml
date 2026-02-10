@@ -26,6 +26,9 @@ importers:
       chessops:
         specifier: ^0.15.0
         version: 0.15.0
+      es-toolkit:
+        specifier: ^1.44.0
+        version: 1.44.0
       immer:
         specifier: ^11.1.4
         version: 11.1.4
