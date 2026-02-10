@@ -1,6 +1,6 @@
 import { Route } from "./+types/home";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
     Alert,
     Button,
@@ -11,13 +11,15 @@ import {
     Switch
 } from "@mantine/core";
 import { useListState } from "@mantine/hooks";
-import { Chess, NormalMove } from "chessops";
+import { Chess, makeSquare, NormalMove } from "chessops";
 import { makeFen } from "chessops/fen";
+import { capitalize } from "es-toolkit";
 
 import { BoardState } from "./types/BoardState";
-import { generateDefaultPieces } from "./constants/llms";
+import { generateDefaultPieces, LLMS } from "./constants/llms";
 import Board from "./Board";
 import styles from "./home.module.css";
+import { Opinion } from "./types/Opinion";
 
 export function clientLoader() {
     return (): BoardState => ({
@@ -28,14 +30,21 @@ export function clientLoader() {
 
 function Home({ loaderData: defaultState }: Route.ComponentProps) {
     const [ stateHistory, setStateHistory ] = useListState([defaultState()]);
+
+    const [ opinion, setOpinion ] = useState<Opinion>();
     const [ opinionPending, setOpinionPending ] = useState(false);
 
     const [ tooltips, setTooltips ] = useState(true);
 
-    const latestState = stateHistory.at(-1);
+    const latestState = useMemo(() => stateHistory.at(-1), [stateHistory]);
     if (!latestState) return <Alert color="red">
         Internal board error.
     </Alert>;
+
+    const opinionModel = useMemo(() => {
+        if (!opinion) return;
+        return latestState.llms[makeSquare(opinion.square)];
+    }, [opinion]);
 
     const getOpinions = async (move?: NormalMove) => {
         setOpinionPending(true);
@@ -50,7 +59,11 @@ function Home({ loaderData: defaultState }: Route.ComponentProps) {
             })
         }).finally(() => setOpinionPending(false));
 
-        console.log(await response.json());
+        const opinions = await response.json() as Opinion[];
+
+        for (const opinion of opinions) {
+            setOpinion(opinion);
+        }
     };
 
     return <div className={styles.wrapper}>
@@ -65,7 +78,7 @@ function Home({ loaderData: defaultState }: Route.ComponentProps) {
             options={{ llmTooltips: tooltips }}
         />
 
-        <span style={{ color: "white" }}>
+        <Stack c="white" w="min(100%, 700px)" align="center">
             {!opinionPending && <span>
                 It is currently {latestState.position.turn} to move.
             </span>}
@@ -74,7 +87,17 @@ function Home({ loaderData: defaultState }: Route.ComponentProps) {
                 Prompting AIs for responses and generating speech,
                 please wait...    
             </span>}
-        </span>
+
+            {opinion && opinionModel && <span>
+                <b>
+                    {LLMS[opinionModel].name + " "}
+                    ({capitalize(opinion.role)} on{" "}
+                    {makeSquare(opinion.square)})
+                    {" "}says:{" "}
+                </b>
+                {opinion.message}
+            </span>}
+        </Stack>
 
         <Group>
             <Button onClick={() => getOpinions()} loading={opinionPending}>
