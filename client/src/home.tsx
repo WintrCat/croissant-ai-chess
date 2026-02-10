@@ -28,6 +28,7 @@ export function clientLoader() {
 
 function Home({ loaderData: defaultState }: Route.ComponentProps) {
     const [ stateHistory, setStateHistory ] = useListState([defaultState()]);
+    const [ opinionPending, setOpinionPending ] = useState(false);
 
     const [ tooltips, setTooltips ] = useState(true);
 
@@ -37,6 +38,8 @@ function Home({ loaderData: defaultState }: Route.ComponentProps) {
     </Alert>;
 
     const getOpinions = async (move?: NormalMove) => {
+        setOpinionPending(true);
+
         const response = await fetch("/api/opinions", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -45,7 +48,9 @@ function Home({ loaderData: defaultState }: Route.ComponentProps) {
                 move: move,
                 pieces: latestState.llms
             })
-        });
+        }).finally(() => setOpinionPending(false));
+
+        console.log(await response.json());
     };
 
     return <div className={styles.wrapper}>
@@ -61,11 +66,18 @@ function Home({ loaderData: defaultState }: Route.ComponentProps) {
         />
 
         <span style={{ color: "white" }}>
-            It is currently {latestState.position.turn} to move.
+            {!opinionPending && <span>
+                It is currently {latestState.position.turn} to move.
+            </span>}
+
+            {opinionPending && <span>
+                Prompting AIs for responses and generating speech,
+                please wait...    
+            </span>}
         </span>
 
         <Group>
-            <Button onClick={() => getOpinions()}>
+            <Button onClick={() => getOpinions()} loading={opinionPending}>
                 Get AI Opinions
             </Button>
 

@@ -42,7 +42,7 @@ export const LLMS = {
         logo: "llms/llama.svg",
         name: "Llama 4 Maverick"
     },
-    "qwen/qwen3-4b:free": {
+    "qwen/qwen3-32b": {
         logo: "llms/qwen.svg",
         name: "Qwen 3"
     },

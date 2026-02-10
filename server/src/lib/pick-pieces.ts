@@ -1,4 +1,4 @@
-import { Chess, Piece, Role } from "chessops";
+import { Chess, Role } from "chessops";
 import { random, sum } from "es-toolkit";
 
 import { LocatedPiece } from "@/types/LocatedPiece";
@@ -41,9 +41,10 @@ export function pickPieces(position: Chess) {
             index++;
         }
 
-        if (!pieces[i]) continue;
-        pieces.splice(i, 1);
-        selectedPieces.push(pieces[i]);
+        if (!pieces[index]) continue;
+        selectedPieces.push(pieces[index]!);
+        pieces.splice(index, 1);
+        weights.splice(index, 1);
     }
     
     return selectedPieces;
