@@ -35,9 +35,12 @@ interface BoardProps {
     onMovePlayed?: (move: NormalMove) => void;
     state: BoardState;
     pushState: (state: BoardState) => void;
+    options: {
+        llmTooltips?: boolean;
+    }
 }
 
-function Board({ onMovePlayed, state, pushState }: BoardProps) {
+function Board({ onMovePlayed, state, pushState, options }: BoardProps) {
     const [ highlighted, setHighlighted ] = useState<string[]>([]);
     const [ promotionOpen, promotionDialog ] = useDisclosure();
     const [ promotionMove, setPromotionMove ] = useState<Promotion>();
@@ -148,11 +151,11 @@ function Board({ onMovePlayed, state, pushState }: BoardProps) {
                         draggable={false}
                     />}
 
-                    {llm && hovered == parsedSquare && <span
-                        className={styles.llmName}
-                    >
-                        {LLMS[llm].name}
-                    </span>}
+                    {llm && options.llmTooltips && hovered == parsedSquare
+                        && <span className={styles.llmName}>
+                            {LLMS[llm].name}
+                        </span>
+                    }
                 </div>;
             },
             boardStyle: { overflow: "visible" },

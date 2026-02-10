@@ -1,6 +1,15 @@
 import { Route } from "./+types/home";
 
-import { Alert, Button, Center, Group, Loader } from "@mantine/core";
+import { useState } from "react";
+import {
+    Alert,
+    Button,
+    Center,
+    Group,
+    Loader,
+    Stack,
+    Switch
+} from "@mantine/core";
 import { useListState } from "@mantine/hooks";
 import { Chess, NormalMove } from "chessops";
 import { makeFen } from "chessops/fen";
@@ -19,6 +28,8 @@ export function clientLoader() {
 
 function Home({ loaderData: defaultState }: Route.ComponentProps) {
     const [ stateHistory, setStateHistory ] = useListState([defaultState()]);
+
+    const [ tooltips, setTooltips ] = useState(true);
 
     const latestState = stateHistory.at(-1);
     if (!latestState) return <Alert color="red">
@@ -43,11 +54,10 @@ function Home({ loaderData: defaultState }: Route.ComponentProps) {
         </span>
 
         <Board
-            onMovePlayed={move => {
-                getOpinions();
-            }}
+            onMovePlayed={getOpinions}
             state={latestState}
             pushState={setStateHistory.append}
+            options={{ llmTooltips: tooltips }}
         />
 
         <span style={{ color: "white" }}>
@@ -74,6 +84,14 @@ function Home({ loaderData: defaultState }: Route.ComponentProps) {
                 Reset Game
             </Button>
         </Group>
+
+        <Stack style={{ color: "white" }}>
+            <Switch
+                label="LLM Tooltips"
+                checked={tooltips}
+                onChange={ev => setTooltips(ev.target.checked)}
+            />
+        </Stack>
     </div>;
 }
 
