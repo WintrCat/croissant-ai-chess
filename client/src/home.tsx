@@ -15,11 +15,11 @@ import { Chess, makeSquare, NormalMove } from "chessops";
 import { makeFen } from "chessops/fen";
 import { capitalize } from "es-toolkit";
 
+import { Opinion } from "./types/Opinion";
 import { BoardState } from "./types/BoardState";
 import { generateDefaultPieces, LLMS } from "./constants/llms";
-import Board from "./Board";
+import Board from "./components/Board";
 import styles from "./home.module.css";
-import { Opinion } from "./types/Opinion";
 
 export function clientLoader() {
     return (): BoardState => ({
@@ -72,7 +72,6 @@ function Home({ loaderData: defaultState }: Route.ComponentProps) {
         </span>
 
         <Board
-            onMovePlayed={getOpinions}
             state={latestState}
             pushState={setStateHistory.append}
             options={{ llmTooltips: tooltips }}

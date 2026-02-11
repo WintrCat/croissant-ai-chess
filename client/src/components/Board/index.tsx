@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Chessboard, defaultPieces } from "react-chessboard";
+import { Chessboard, defaultPieces, PieceRenderObject } from "react-chessboard";
 import { useDisclosure } from "@mantine/hooks";
 import {
     charToRole,
@@ -17,18 +17,23 @@ import {
 import { makeFen } from "chessops/fen";
 import { produce } from "immer";
 
-import { BoardState } from "./types/BoardState";
-import { LLMS } from "./constants/llms";
-import { playBoardSound } from "./lib/board-sounds";
+import Piece from "../Piece";
+import { BoardState } from "../../types/BoardState";
+import { LLMS } from "../../constants/llms";
+import { playBoardSound } from "../../lib/board-sounds";
 import styles from "./Board.module.css";
 
 type ColourChar = "w" | "b";
 type Promotion = NormalMove & { colour: ColourChar };
 
-function getRoleChars(colour: ColourChar, promotable = true) {
-    return ROLE_CHARS
+function getRoleChars(colour?: ColourChar, promotable = true) {
+    const colourRoleChars = (colour: ColourChar) => ROLE_CHARS
         .filter(char => !promotable || (char != "k" && char != "p"))
         .map(char => `${colour}${char.toUpperCase()}`);
+
+    return colour
+        ? colourRoleChars(colour)
+        : colourRoleChars("w").concat(colourRoleChars("b"));
 }
 
 interface BoardProps {
@@ -63,7 +68,8 @@ function Board({ onMovePlayed, state, pushState, options }: BoardProps) {
                 if (!llm) return draft;
                 draft[makeSquare(move.to)] = llm;
                 return draft;
-            })
+            }),
+            move: move
         });
     };
 
@@ -74,6 +80,25 @@ function Board({ onMovePlayed, state, pushState, options }: BoardProps) {
         promotionDialog.close();
         setPromotionMove(undefined);
     };
+
+    const pieces: PieceRenderObject = Object.fromEntries(
+        getRoleChars(undefined, false).map(char => [char, piece => {
+            const defaultSvg = defaultPieces[char]();
+            if (!piece?.square) return defaultSvg;
+
+            const llm = state.llms[piece.square as SquareName];
+            if (!llm) return defaultSvg;
+
+            const parsedSquare = parseSquare(piece.square);
+
+            return <Piece roleChar={char} model={llm} tooltip={!!(
+                (held == parsedSquare || (
+                    held == undefined && hovered == parsedSquare
+                ))
+                && options.llmTooltips
+            )}/>;
+        }])
+    );
 
     return <div className={styles.wrapper}>
         <Chessboard options={{
@@ -128,7 +153,6 @@ function Board({ onMovePlayed, state, pushState, options }: BoardProps) {
             },
             squareRenderer: ({ square, children }) => {
                 const parsedSquare = parseSquare(square as SquareName);
-                const llm = state.llms[square as SquareName];
 
                 const isDestination = held && state.position.dests(held)
                     .has(parsedSquare);
@@ -144,20 +168,9 @@ function Board({ onMovePlayed, state, pushState, options }: BoardProps) {
                     }/>}
 
                     {children}
-
-                    {llm && <img
-                        src={LLMS[llm].logo}
-                        className={styles.llmLogo}
-                        draggable={false}
-                    />}
-
-                    {llm && options.llmTooltips && hovered == parsedSquare
-                        && <span className={styles.llmName}>
-                            {LLMS[llm].name}
-                        </span>
-                    }
                 </div>;
             },
+            pieces: pieces,
             boardStyle: { overflow: "visible" },
             dropSquareStyle: { boxShadow: "0 0 0px 5px #fff inset" }
         }}/>
