@@ -1,5 +1,9 @@
 import React, { useState } from "react";
-import { Chessboard, defaultPieces, PieceRenderObject } from "react-chessboard";
+import {
+    Chessboard,
+    defaultPieces,
+    PieceRenderObject
+} from "react-chessboard";
 import { useDisclosure } from "@mantine/hooks";
 import {
     charToRole,
@@ -18,9 +22,8 @@ import { makeFen } from "chessops/fen";
 import { produce } from "immer";
 
 import Piece from "../Piece";
-import { BoardState } from "../../types/BoardState";
-import { LLMS } from "../../constants/llms";
-import { playBoardSound } from "../../lib/board-sounds";
+import { BoardState } from "@/types/BoardState";
+import { playBoardSound } from "@/lib/sounds";
 import styles from "./Board.module.css";
 
 type ColourChar = "w" | "b";

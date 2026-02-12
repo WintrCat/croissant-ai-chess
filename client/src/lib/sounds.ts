@@ -21,3 +21,22 @@ export function playBoardSound(position: Chess, move: NormalMove) {
         new Audio("/audio/move.mp3").play();
     }
 }
+
+export async function playFullAudio(
+    url: string,
+    controller?: AbortController
+) {
+    const audio = new Audio(url);
+
+    return new Promise<void>((res, rej) => {
+        audio.play();
+
+        controller?.signal.addEventListener("abort", () => {
+            audio.pause();
+            res();
+        });
+
+        audio.addEventListener("ended", () => res());
+        audio.addEventListener("error", rej);
+    });
+}

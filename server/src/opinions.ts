@@ -40,7 +40,7 @@ router.post(path, async (req, res) => {
         parseFen(body.position).unwrap()
     ).unwrap();
 
-    const selectedPieces = pickPieces(position);
+    const selectedPieces = pickPieces(position, 2);
     const opinions: Opinion[] = [];
 
     for (const selectedPiece of selectedPieces) {
@@ -74,8 +74,6 @@ router.post(path, async (req, res) => {
             message: message,
             audio: ""
         });
-
-        break;
     }
 
     res.send(opinions);

@@ -12,10 +12,8 @@ const PIECE_VALUES: Record<Role, number> = {
     king: Infinity
 };
 
-const PIECE_TALK_COUNT = 6;
-
 /** Pick pieces by weighted probability to give an opinion */
-export function pickPieces(position: Chess) {
+export function pickPieces(position: Chess, max = 6) {
     const pieces: LocatedPiece[] = [...position.board[position.turn]]
         .map(square => {
             const piece = position.board.get(square);
@@ -30,8 +28,7 @@ export function pickPieces(position: Chess) {
 
     const selectedPieces: LocatedPiece[] = [];
 
-    const numToTake = Math.min(PIECE_TALK_COUNT, pieces.length);
-    for (let i = 0; i < numToTake; i++) {
+    for (let i = 0; i < Math.min(max, pieces.length); i++) {
         const num = Math.round(random(0, sum(weights)));
     
         let index = 0, count = 0;

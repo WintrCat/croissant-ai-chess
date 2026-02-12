@@ -1,6 +1,6 @@
 import { Route } from "./+types/home";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
     Alert,
     Button,
@@ -18,6 +18,7 @@ import { capitalize } from "es-toolkit";
 import { Opinion } from "./types/Opinion";
 import { BoardState } from "./types/BoardState";
 import { generateDefaultPieces, LLMS } from "./constants/llms";
+import { playFullAudio } from "./lib/sounds";
 import Board from "./components/Board";
 import styles from "./home.module.css";
 
@@ -35,6 +36,8 @@ function Home({ loaderData: defaultState }: Route.ComponentProps) {
     const [ opinionPending, setOpinionPending ] = useState(false);
 
     const [ tooltips, setTooltips ] = useState(true);
+
+    const opinionsController = useRef<AbortController>(null);
 
     const latestState = useMemo(() => stateHistory.at(-1), [stateHistory]);
     if (!latestState) return <Alert color="red">
@@ -60,10 +63,16 @@ function Home({ loaderData: defaultState }: Route.ComponentProps) {
         }).finally(() => setOpinionPending(false));
 
         const opinions = await response.json() as Opinion[];
+        opinionsController.current = new AbortController();
 
         for (const opinion of opinions) {
             setOpinion(opinion);
+            //await playFullAudio(opinion.audio, opinionsController.current);
+
+            if (opinionsController.current.signal.aborted) break;
         }
+
+        opinionsController.current = null;
     };
 
     return <div className={styles.wrapper}>
@@ -77,7 +86,7 @@ function Home({ loaderData: defaultState }: Route.ComponentProps) {
             options={{ llmTooltips: tooltips }}
         />
 
-        <Stack c="white" w="min(100%, 700px)" align="center">
+        <Stack className={styles.informationArea}>
             {!opinionPending && <span>
                 It is currently {latestState.position.turn} to move.
             </span>}
@@ -94,13 +103,20 @@ function Home({ loaderData: defaultState }: Route.ComponentProps) {
                     {makeSquare(opinion.square)})
                     {" "}says:{" "}
                 </b>
+                
                 {opinion.message}
             </span>}
         </Stack>
 
-        <Group>
+        <Group justify="center">
             <Button onClick={() => getOpinions()} loading={opinionPending}>
                 Get AI Opinions
+            </Button>
+
+            <Button disabled={!opinionsController.current} onClick={
+                () => opinionsController.current?.abort()
+            }>
+                Cancel AI Opinions
             </Button>
 
             <Button color="red" onClick={() => {

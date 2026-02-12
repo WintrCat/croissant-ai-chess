@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { defaultPieces } from "react-chessboard";
 
 import { LLMS } from "@/constants/llms";
@@ -10,17 +10,21 @@ interface PieceProps {
     tooltip: boolean;
 }
 
+const LLMIcon = memo(({ src }: { src: string }) => {
+    return <img
+        src={src}
+        className={styles.llmLogo}
+        draggable={false}
+    />;
+});
+
 const Piece = memo(({ roleChar, model, tooltip }: PieceProps) => {
-    const defaultSvg = defaultPieces[roleChar]();
+    const defaultSvg = useMemo(() => defaultPieces[roleChar](), [roleChar]);
 
     return <div>
         {defaultSvg}
 
-        <img
-            src={LLMS[model].logo}
-            className={styles.llmLogo}
-            draggable={false}
-        />
+        <LLMIcon src={LLMS[model].logo} />
 
         {tooltip && <span className={styles.llmName}>
             {LLMS[model].name}
