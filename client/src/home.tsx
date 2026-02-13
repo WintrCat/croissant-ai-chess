@@ -32,22 +32,26 @@ export function clientLoader() {
 function Home({ loaderData: defaultState }: Route.ComponentProps) {
     const [ stateHistory, setStateHistory ] = useListState([defaultState()]);
 
-    const [ opinion, setOpinion ] = useState<Opinion>();
+    const [ opinions, setOpinions ] = useState<Opinion[]>([]);
+    const [ currentOpinion, setCurrentOpinion ] = useState<Opinion>();
     const [ opinionPending, setOpinionPending ] = useState(false);
 
-    const [ tooltips, setTooltips ] = useState(true);
+    const [
+        opinionsController,
+        setOpinionsController
+    ] = useState<AbortController>();
 
-    const opinionsController = useRef<AbortController>(null);
+    const [ tooltips, setTooltips ] = useState(true);
 
     const latestState = useMemo(() => stateHistory.at(-1), [stateHistory]);
     if (!latestState) return <Alert color="red">
         Internal board error.
     </Alert>;
 
-    const opinionModel = useMemo(() => {
-        if (!opinion) return;
-        return latestState.llms[makeSquare(opinion.square)];
-    }, [opinion]);
+    const currentOpinionModel = useMemo(() => {
+        if (!currentOpinion) return;
+        return latestState.llms[makeSquare(currentOpinion.square)];
+    }, [currentOpinion]);
 
     const getOpinions = async (move?: NormalMove) => {
         setOpinionPending(true);
@@ -63,16 +67,22 @@ function Home({ loaderData: defaultState }: Route.ComponentProps) {
         }).finally(() => setOpinionPending(false));
 
         const opinions = await response.json() as Opinion[];
-        opinionsController.current = new AbortController();
+        setOpinions(opinions);
+    };
+
+    const playOpinions = async () => {
+        const controller = new AbortController();
+        setOpinionsController(controller);
 
         for (const opinion of opinions) {
-            setOpinion(opinion);
-            //await playFullAudio(opinion.audio, opinionsController.current);
+            setCurrentOpinion(opinion);
+            await playFullAudio(opinion.audio, controller);
+            await new Promise(res => setTimeout(res, 1000));
 
-            if (opinionsController.current.signal.aborted) break;
+            if (controller.signal.aborted) break;
         }
 
-        opinionsController.current = null;
+        setOpinionsController(undefined);
     };
 
     return <div className={styles.wrapper}>
@@ -96,15 +106,15 @@ function Home({ loaderData: defaultState }: Route.ComponentProps) {
                 please wait...    
             </span>}
 
-            {opinion && opinionModel && <span>
+            {currentOpinion && currentOpinionModel && <span>
                 <b>
-                    {LLMS[opinionModel].name + " "}
-                    ({capitalize(opinion.role)} on{" "}
-                    {makeSquare(opinion.square)})
+                    {LLMS[currentOpinionModel].name + " "}
+                    ({capitalize(currentOpinion.role)} on{" "}
+                    {makeSquare(currentOpinion.square)})
                     {" "}says:{" "}
                 </b>
                 
-                {opinion.message}
+                {currentOpinion.message}
             </span>}
         </Stack>
 
@@ -113,10 +123,18 @@ function Home({ loaderData: defaultState }: Route.ComponentProps) {
                 Get AI Opinions
             </Button>
 
-            <Button disabled={!opinionsController.current} onClick={
-                () => opinionsController.current?.abort()
-            }>
-                Cancel AI Opinions
+            <Button
+                color={opinionsController ? "red": "blue"}
+                disabled={opinions.length == 0}
+                onClick={() => opinionsController
+                    ? opinionsController.abort()
+                    : playOpinions()
+                }
+            >
+                {opinionsController
+                    ? "bro stop talking"
+                    : "Play AI Opinions"
+                }
             </Button>
 
             <Button color="red" onClick={() => {
@@ -130,6 +148,10 @@ function Home({ loaderData: defaultState }: Route.ComponentProps) {
 
             <Button color="red" onClick={() => {
                 setStateHistory.setState([defaultState()]);
+                setOpinionPending(false);
+                setCurrentOpinion(undefined);
+                setOpinions([]);
+                setOpinionsController(undefined);
             }}>
                 Reset Game
             </Button>

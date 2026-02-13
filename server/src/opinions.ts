@@ -2,6 +2,7 @@ import { json, Router } from "express";
 import { StatusCodes } from "http-status-codes";
 import dotenv from "dotenv";
 import { OpenAI } from "openai";
+import { GoogleGenAI } from "@google/genai";
 import { Chess, makeSquare, ROLES } from "chessops";
 import { parseFen } from "chessops/fen";
 import z from "zod";
@@ -9,6 +10,7 @@ import z from "zod";
 import { Opinion } from "./types/Opinion";
 import { pickPieces } from "./lib/pick-pieces";
 import { buildPrompt, pieceLabel } from "./lib/prompt";
+import { pcmToWavDataURL } from "./lib/audio";
 
 dotenv.config({ path: "../.env", quiet: true });
 
@@ -30,6 +32,10 @@ const openaiClient = new OpenAI({
     apiKey: process.env.OPENROUTER_API_KEY
 });
 
+const googleClient = new GoogleGenAI({
+    apiKey: process.env.TTS_API_KEY
+});
+
 router.use(path, json());
 
 router.post(path, async (req, res) => {
@@ -40,7 +46,9 @@ router.post(path, async (req, res) => {
         parseFen(body.position).unwrap()
     ).unwrap();
 
-    const selectedPieces = pickPieces(position, 2);
+    const selectedPieces = pickPieces(position,
+        Number(process.env.PIECE_PICK_COUNT) || 1
+    );
     const opinions: Opinion[] = [];
 
     for (const selectedPiece of selectedPieces) {
@@ -66,13 +74,30 @@ router.post(path, async (req, res) => {
         if (!message) continue;
 
         // prompt the TTS and get audio
+        console.log(`attempting to generate speech for ${model}...`);
 
+        const speech = await googleClient.models.generateContent({
+            model: "gemini-2.5-flash-preview-tts",
+            contents: [{ text: message }],
+            config: {
+                responseModalities: ["AUDIO"],
+                speechConfig: {
+                    voiceConfig: {
+                        prebuiltVoiceConfig: { voiceName: "Kore" }
+                    }
+                }
+            }
+        });
+
+        const audio = speech.candidates?.at(0)?.content
+            ?.parts?.at(0)?.inlineData?.data;
+        if (!audio) continue;
 
         // collect in list of stuff
         opinions.push({
             ...selectedPiece,
             message: message,
-            audio: ""
+            audio: pcmToWavDataURL(Buffer.from(audio, "base64"))
         });
     }
 

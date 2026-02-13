@@ -43,5 +43,8 @@ export function buildPrompt(
         Using this information, make a comment (not exceeding 25-30 words)
         about the position or the move that you think your side
         (${position.turn}) should make. ${auxiliaryContextComment}
+        This prompt will be given to a Text-to-Speech engine, so you may
+        precede your response with some instructions (e.g. "(shout angrily)")
+        if necessary to convey the piece's thoughts.
     `;
 }
