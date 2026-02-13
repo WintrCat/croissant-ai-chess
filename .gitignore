@@ -2,3 +2,4 @@
 **/build
 client/.react-router
 .env
+.VSCodeCounter

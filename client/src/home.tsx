@@ -54,6 +54,7 @@ function Home({ loaderData: defaultState }: Route.ComponentProps) {
     }, [currentOpinion]);
 
     const getOpinions = async (move?: NormalMove) => {
+        setCurrentOpinion(undefined);
         setOpinionPending(true);
 
         const response = await fetch("/api/opinions", {

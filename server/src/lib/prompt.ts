@@ -1,8 +1,10 @@
 import { Chess, makeSquare, Square } from "chessops";
 import { makeFen } from "chessops/fen";
+import { makeSan } from "chessops/san";
 
 import { LocatedPiece } from "@/types/LocatedPiece";
 import { Opinion } from "@/types/Opinion";
+import { getLegalMoves } from "./legal-moves";
 
 export function pieceLabel(piece: LocatedPiece, self?: Square) {
     const selfComment = self == piece.square ? " (you)" : "";
@@ -20,6 +22,9 @@ export function buildPrompt(
 
         return pieceLabel({ ...currPiece, square }, piece.square);
     }).filter(label => label != undefined);
+
+    const legalMoves = getLegalMoves(position)
+        .map(move => makeSan(position, move));
 
     const contextComment = context.length > 0
         ? `Your peers (the other ${position.turn} pieces) have already made`
@@ -39,9 +44,11 @@ export function buildPrompt(
         ${makeSquare(piece.square)} square. The position in FEN notation is
         \`${makeFen(position.toSetup())}\`. In accordance with the FEN, the
         pieces on the board are as follows: ${pieces.join(", ")}.
+        The legal moves in this position (in SAN notation) are:
+        ${legalMoves.join("\n")}
         ${contextComment}
         Using this information, make a comment (not exceeding 25-30 words)
-        about the position or the move that you think your side
+        about the position or the legal move that you think your side
         (${position.turn}) should make. ${auxiliaryContextComment}
         This prompt will be given to a Text-to-Speech engine, so you may
         precede your response with some instructions (e.g. "(shout angrily)")
