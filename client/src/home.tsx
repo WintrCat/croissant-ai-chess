@@ -1,6 +1,6 @@
 import { Route } from "./+types/home";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import {
     Alert,
     Button,
@@ -22,6 +22,8 @@ import { playFullAudio } from "./lib/sounds";
 import Board from "./components/Board";
 import styles from "./home.module.css";
 
+type OpinionStatus = "all" | "move" | undefined;
+
 export function clientLoader() {
     return (): BoardState => ({
         position: Chess.default(),
@@ -34,7 +36,7 @@ function Home({ loaderData: defaultState }: Route.ComponentProps) {
 
     const [ opinions, setOpinions ] = useState<Opinion[]>([]);
     const [ currentOpinion, setCurrentOpinion ] = useState<Opinion>();
-    const [ opinionPending, setOpinionPending ] = useState(false);
+    const [ opinionPending, setOpinionPending ] = useState<OpinionStatus>();
 
     const [
         opinionsController,
@@ -55,7 +57,7 @@ function Home({ loaderData: defaultState }: Route.ComponentProps) {
 
     const getOpinions = async (move?: NormalMove) => {
         setCurrentOpinion(undefined);
-        setOpinionPending(true);
+        setOpinionPending(move ? "move" : "all");
 
         const response = await fetch("/api/opinions", {
             method: "POST",
@@ -65,7 +67,7 @@ function Home({ loaderData: defaultState }: Route.ComponentProps) {
                 move: move,
                 pieces: latestState.llms
             })
-        }).finally(() => setOpinionPending(false));
+        }).finally(() => setOpinionPending(undefined));
 
         const opinions = await response.json() as Opinion[];
         setOpinions(opinions);
@@ -120,8 +122,19 @@ function Home({ loaderData: defaultState }: Route.ComponentProps) {
         </Stack>
 
         <Group justify="center">
-            <Button onClick={() => getOpinions()} loading={opinionPending}>
-                Get AI Opinions
+            <Button
+                loading={opinionPending == "all"}
+                onClick={() => getOpinions()}
+            >
+                Get Opinions
+            </Button>
+
+            <Button
+                disabled={!latestState.move}
+                loading={opinionPending == "move"}
+                onClick={() => getOpinions(latestState.move)}
+            >
+                Get Move Opinion
             </Button>
 
             <Button
@@ -134,10 +147,12 @@ function Home({ loaderData: defaultState }: Route.ComponentProps) {
             >
                 {opinionsController
                     ? "bro stop talking"
-                    : "Play AI Opinions"
+                    : "Play Opinions"
                 }
             </Button>
+        </Group>
 
+        <Group>
             <Button color="red" onClick={() => {
                 const lastBoardState = stateHistory.at(-2);
                 if (!lastBoardState) return;
@@ -149,7 +164,7 @@ function Home({ loaderData: defaultState }: Route.ComponentProps) {
 
             <Button color="red" onClick={() => {
                 setStateHistory.setState([defaultState()]);
-                setOpinionPending(false);
+                setOpinionPending(undefined);
                 setCurrentOpinion(undefined);
                 setOpinions([]);
                 setOpinionsController(undefined);

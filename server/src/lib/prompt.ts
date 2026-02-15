@@ -1,4 +1,4 @@
-import { Chess, makeSquare, Square } from "chessops";
+import { Chess, makeSquare, NormalMove, Square } from "chessops";
 import { makeFen } from "chessops/fen";
 import { makeSan } from "chessops/san";
 
@@ -6,16 +6,24 @@ import { LocatedPiece } from "@/types/LocatedPiece";
 import { Opinion } from "@/types/Opinion";
 import { getLegalMoves } from "./legal-moves";
 
+interface PromptOptions {
+    position: Chess;
+    piece: LocatedPiece;
+    move?: NormalMove;
+    context?: Opinion[];
+}
+
 export function pieceLabel(piece: LocatedPiece, self?: Square) {
     const selfComment = self == piece.square ? " (you)" : "";
     return `${piece.role} on ${makeSquare(piece.square)}${selfComment}`;
 }
 
-export function buildPrompt(
-    position: Chess,
-    piece: LocatedPiece,
-    context: Opinion[] = []
-) {
+export function buildPrompt({
+    position,
+    piece,
+    move,
+    context = []
+}: PromptOptions) {
     const pieces = [...position.board.occupied].map(square => {
         const currPiece = position.board.get(square);
         if (!currPiece) return;
@@ -26,18 +34,32 @@ export function buildPrompt(
     const legalMoves = getLegalMoves(position)
         .map(move => makeSan(position, move));
 
-    const contextComment = context.length > 0
-        ? `Your peers (the other ${position.turn} pieces) have already made`
-            + "the following comments about the position or the move that "
-            + "they would like to make:\n"
-            + context.map(ctx => (
-                `${pieceLabel(ctx)}: "${ctx.message}"`
-            )).join("\n")
-        : "";
+    const contextComment = !move && context.length > 0 ? (
+        `Your peers (the other ${position.turn} pieces) have already made`
+        + "the following comments about the position or the move that "
+        + "they would like to make:\n"
+        + context.map(ctx => (
+            `${pieceLabel(ctx)}: "${ctx.message}"`
+        )).join("\n")
+    ) : "";
 
-    const auxiliaryContextComment = contextComment
+    const afterContextComment = contextComment
         ? "If you would like, you may also respond to one of your peers."
         : "";
+
+    const moveComment = move ? (
+        "The move that has just been played in this"
+        + ` position is ${makeSan(position, move)}, which moved you.`
+    ) : "";
+
+    const requestComment = move ? (
+        "about the move that has just moved you, or what you want to do"
+        + " having now been moved, or what you think you have achieved in"
+        + " having been moved here."
+    ) : (
+        "about the position or the legal move that you think your side"
+        + ` (${position.turn}) should make.`
+    );
 
     return `
         You are a ${piece.role} on a Chess board. You are currently on the
@@ -46,11 +68,10 @@ export function buildPrompt(
         pieces on the board are as follows: ${pieces.join(", ")}.
         The legal moves in this position (in SAN notation) are:
         ${legalMoves.join("\n")}
-        ${contextComment}
+        ${moveComment || ""} ${contextComment}
         Using this information, make a comment (not exceeding 25-30 words)
-        about the position or the legal move that you think your side
-        (${position.turn}) should make. ${auxiliaryContextComment}
-        This prompt will be given to a Text-to-Speech engine, so you may
+        ${requestComment} ${afterContextComment}
+        The response will be given to a Text-to-Speech engine, so you may
         precede your response with some instructions (e.g. "(shout angrily)")
         if necessary to convey the piece's thoughts.
     `;
