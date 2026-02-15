@@ -1,12 +1,12 @@
 import dotenv from "dotenv";
 import { OpenAI } from "openai";
 import { GoogleGenAI } from "@google/genai";
-import { Chess, NormalMove, Square } from "chessops";
+import { Chess, Square } from "chessops";
 
 import { LocatedPiece } from "@/types/LocatedPiece";
 import { Opinion } from "@/types/Opinion";
 import { pieceLabel, buildPrompt } from "./prompt";
-import { pcmToWavDataURL } from "./audio";
+import { pcmToWavDataURL, SAN_REGEX, ttsMoveNotation } from "./audio";
 
 dotenv.config({ path: "../.env", quiet: true });
 
@@ -15,7 +15,7 @@ interface OpinionOptions {
     square: Square
     model: string;
     previousOpinions?: Opinion[];
-    move?: NormalMove;
+    moveSan?: string;
 }
 
 const openaiClient = new OpenAI({
@@ -32,7 +32,7 @@ export async function getOpinion({
     model,
     square,
     previousOpinions = [],
-    move
+    moveSan
 }: OpinionOptions) {
     const piece = position.board.get(square);
     if (!piece) return;
@@ -53,7 +53,7 @@ export async function getOpinion({
                 position: position,
                 piece: selectedPiece,
                 context: previousOpinions,
-                move: move
+                moveSan: moveSan
             })
         }]
     });
@@ -64,9 +64,25 @@ export async function getOpinion({
     // prompt the TTS and get audio
     console.log(`attempting to generate speech for ${model}...`);
 
+    // replace all SANs (except ones that are synonymous with squares)
+    // with TTS-pronouncable versions
+    let ttsMessage = message;
+
+    const sanMatches = ttsMessage.matchAll(new RegExp(SAN_REGEX, "g"))
+        .filter(move => move[0].length > 2)
+        .toArray();
+
+    for (const sanMatch of sanMatches) {
+        ttsMessage = ttsMessage.replace(
+            sanMatch[0], ttsMoveNotation(sanMatch[0])
+        );
+    }
+
+    console.log(`generated speech: ${ttsMessage}`);
+
     const speech = await googleClient.models.generateContent({
         model: "gemini-2.5-flash-preview-tts",
-        contents: [{ text: message }],
+        contents: [{ text: ttsMessage }],
         config: {
             responseModalities: ["AUDIO"],
             speechConfig: {

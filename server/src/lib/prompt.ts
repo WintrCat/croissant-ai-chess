@@ -1,4 +1,4 @@
-import { Chess, makeSquare, NormalMove, Square } from "chessops";
+import { Chess, makeSquare, Square } from "chessops";
 import { makeFen } from "chessops/fen";
 import { makeSan } from "chessops/san";
 
@@ -9,7 +9,7 @@ import { getLegalMoves } from "./legal-moves";
 interface PromptOptions {
     position: Chess;
     piece: LocatedPiece;
-    move?: NormalMove;
+    moveSan?: string;
     context?: Opinion[];
 }
 
@@ -21,7 +21,7 @@ export function pieceLabel(piece: LocatedPiece, self?: Square) {
 export function buildPrompt({
     position,
     piece,
-    move,
+    moveSan,
     context = []
 }: PromptOptions) {
     const pieces = [...position.board.occupied].map(square => {
@@ -34,7 +34,12 @@ export function buildPrompt({
     const legalMoves = getLegalMoves(position)
         .map(move => makeSan(position, move));
 
-    const contextComment = !move && context.length > 0 ? (
+    const moveComment = moveSan ? (
+        "The move that has just been played in this"
+        + ` position is ${moveSan}, which moved you.`
+    ) : "";
+
+    const contextComment = !moveSan && context.length > 0 ? (
         `Your peers (the other ${position.turn} pieces) have already made`
         + "the following comments about the position or the move that "
         + "they would like to make:\n"
@@ -43,16 +48,7 @@ export function buildPrompt({
         )).join("\n")
     ) : "";
 
-    const afterContextComment = contextComment
-        ? "If you would like, you may also respond to one of your peers."
-        : "";
-
-    const moveComment = move ? (
-        "The move that has just been played in this"
-        + ` position is ${makeSan(position, move)}, which moved you.`
-    ) : "";
-
-    const requestComment = move ? (
+    const requestComment = moveSan ? (
         "about the move that has just moved you, or what you want to do"
         + " having now been moved, or what you think you have achieved in"
         + " having been moved here."
@@ -60,6 +56,10 @@ export function buildPrompt({
         "about the position or the legal move that you think your side"
         + ` (${position.turn}) should make.`
     );
+
+    const afterContextComment = contextComment
+        ? "If you would like, you may also respond to one of your peers."
+        : "";
 
     return `
         You are a ${piece.role} on a Chess board. You are currently on the
@@ -71,6 +71,8 @@ export function buildPrompt({
         ${moveComment || ""} ${contextComment}
         Using this information, make a comment (not exceeding 25-30 words)
         ${requestComment} ${afterContextComment}
+        You must ALWAYS refer to yourself as "I", "me", "myself" etc. NEVER
+        refer to yourself as "my pawn" etc.
         The response will be given to a Text-to-Speech engine, so you may
         precede your response with some instructions (e.g. "(shout angrily)")
         if necessary to convey the piece's thoughts.

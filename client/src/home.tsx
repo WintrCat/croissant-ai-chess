@@ -13,6 +13,7 @@ import {
 import { useListState } from "@mantine/hooks";
 import { Chess, makeSquare, NormalMove } from "chessops";
 import { makeFen } from "chessops/fen";
+import { makeSan } from "chessops/san";
 import { capitalize } from "es-toolkit";
 
 import { Opinion } from "./types/Opinion";
@@ -58,13 +59,18 @@ function Home({ loaderData: defaultState }: Route.ComponentProps) {
     const getOpinions = async (move?: NormalMove) => {
         setCurrentOpinion(undefined);
         setOpinionPending(move ? "move" : "all");
+        
+        const lastPosition = stateHistory.at(-2)?.position;
 
         const response = await fetch("/api/opinions", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 position: makeFen(latestState.position.toSetup()),
-                move: move,
+                move: move && {
+                    parsed: move,
+                    san: lastPosition && makeSan(lastPosition, move)
+                },
                 pieces: latestState.llms
             })
         }).finally(() => setOpinionPending(undefined));

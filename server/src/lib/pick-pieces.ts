@@ -19,8 +19,7 @@ export function pickPieces(position: Chess, max = 6) {
             const piece = position.board.get(square);
             return piece && { ...piece, square };
         })
-        .filter(piece => piece != undefined)
-        .sort((a, b) => PIECE_VALUES[b.role] - PIECE_VALUES[a.role]);
+        .filter(piece => piece != undefined);
 
     const weights = pieces.map((_, index) => (
         Math.pow(pieces.length - index, 2)
@@ -44,5 +43,7 @@ export function pickPieces(position: Chess, max = 6) {
         weights.splice(index, 1);
     }
     
-    return selectedPieces;
+    return selectedPieces.sort((a, b) => (
+        PIECE_VALUES[b.role] - PIECE_VALUES[a.role]
+    ));
 }

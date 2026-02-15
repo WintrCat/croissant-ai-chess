@@ -14,9 +14,12 @@ const path = "/api/opinions";
 const requestSchema = z.object({
     position: z.string(),
     move: z.object({
-        from: z.int(),
-        to: z.int(),
-        promotion: z.enum(ROLES).optional()
+        parsed: z.object({
+            from: z.int(),
+            to: z.int(),
+            promotion: z.enum(ROLES).optional()
+        }),
+        san: z.string()
     }).optional(),
     pieces: z.record(z.string(), z.string())
 });
@@ -32,8 +35,8 @@ router.post(path, async (req, res) => {
     ).unwrap();
 
     if (body.move) {
-        const piece = position.board.get(body.move.to);
-        const model = body.pieces[makeSquare(body.move.to)];
+        const piece = position.board.get(body.move.parsed.to);
+        const model = body.pieces[makeSquare(body.move.parsed.to)];
 
         if (!piece || !model) return res.status(
             StatusCodes.INTERNAL_SERVER_ERROR
@@ -42,7 +45,8 @@ router.post(path, async (req, res) => {
         const moveOpinion = await getOpinion({
             position: position,
             model: model,
-            square: body.move.to
+            square: body.move.parsed.to,
+            moveSan: body.move.san
         });
 
         return moveOpinion
