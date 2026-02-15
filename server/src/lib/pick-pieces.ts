@@ -12,6 +12,8 @@ const PIECE_VALUES: Record<Role, number> = {
     king: Infinity
 };
 
+const FINITE_KING_VALUE = 15;
+
 /** Pick pieces by weighted probability to give an opinion */
 export function pickPieces(position: Chess, max = 6) {
     const pieces: LocatedPiece[] = [...position.board[position.turn]]
@@ -21,9 +23,10 @@ export function pickPieces(position: Chess, max = 6) {
         })
         .filter(piece => piece != undefined);
 
-    const weights = pieces.map((_, index) => (
-        Math.pow(pieces.length - index, 2)
-    ));
+    const weights = pieces.map(piece => {
+        const value = PIECE_VALUES[piece.role];
+        return Math.pow(isFinite(value) ? value : FINITE_KING_VALUE, 2)
+    });
 
     const selectedPieces: LocatedPiece[] = [];
 

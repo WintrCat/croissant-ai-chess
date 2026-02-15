@@ -34,6 +34,8 @@ router.post(path, async (req, res) => {
         parseFen(body.position).unwrap()
     ).unwrap();
 
+    console.log(`GENERATING ${body.move ? "MOVE " : ""}OPINIONS:`);
+
     if (body.move) {
         const piece = position.board.get(body.move.parsed.to);
         const model = body.pieces[makeSquare(body.move.parsed.to)];

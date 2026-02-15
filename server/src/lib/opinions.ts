@@ -5,6 +5,7 @@ import { Chess, Square } from "chessops";
 
 import { LocatedPiece } from "@/types/LocatedPiece";
 import { Opinion } from "@/types/Opinion";
+import { getPieceVoice } from "@/constants/llm-voices";
 import { pieceLabel, buildPrompt } from "./prompt";
 import { pcmToWavDataURL, SAN_REGEX, ttsMoveNotation } from "./audio";
 
@@ -61,9 +62,6 @@ export async function getOpinion({
     const message = llmResponse.choices.at(0)?.message.content;
     if (!message) return;
 
-    // prompt the TTS and get audio
-    console.log(`attempting to generate speech for ${model}...`);
-
     // replace all SANs (except ones that are synonymous with squares)
     // with TTS-pronouncable versions
     let ttsMessage = message;
@@ -78,7 +76,12 @@ export async function getOpinion({
         );
     }
 
-    console.log(`generated speech: ${ttsMessage}`);
+    // prompt the TTS and get audio
+    const pieceVoice = getPieceVoice(model, selectedPiece);
+    console.log(
+        `attempting to generate speech for ${model}` 
+        + ` with voice ${pieceVoice}...`
+    );
 
     const speech = await googleClient.models.generateContent({
         model: "gemini-2.5-flash-preview-tts",
@@ -87,7 +90,7 @@ export async function getOpinion({
             responseModalities: ["AUDIO"],
             speechConfig: {
                 voiceConfig: {
-                    prebuiltVoiceConfig: { voiceName: "Kore" }
+                    prebuiltVoiceConfig: { voiceName: pieceVoice }
                 }
             }
         }

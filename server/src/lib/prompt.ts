@@ -15,7 +15,9 @@ interface PromptOptions {
 
 export function pieceLabel(piece: LocatedPiece, self?: Square) {
     const selfComment = self == piece.square ? " (you)" : "";
-    return `${piece.role} on ${makeSquare(piece.square)}${selfComment}`;
+    
+    return `${makeSquare(piece.square)} ${piece.color}`
+        + ` ${piece.role}${selfComment}`;
 }
 
 export function buildPrompt({
