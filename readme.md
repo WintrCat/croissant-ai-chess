@@ -1,4 +1,4 @@
-## Croissant's AI Piece Chess
+## 🥐 Croissant's AI Piece Chess
 
 Chess, but every piece is controlled by a different LLM.
 
