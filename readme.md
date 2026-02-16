@@ -1,20 +1,16 @@
-## WintrCat App Template
+## Croissant's AI Piece Chess
 
-my random template for making websites<br>
-this is mostly just for me but do whatever you want
+Chess, but every piece is controlled by a different LLM.
 
-### Tech Stack
+Uses [OpenRouter](https://openrouter.ai/) for API access to a range of LLMs, and [Gemini 2.5 Flash TTS](https://docs.cloud.google.com/text-to-speech/docs/gemini-tts) for text-to-speech.
 
-- pnpm
-- typescript
-- react
-- react router *(for SSR)*
-- express.js *(with cluster)*
+> [!IMPORTANT]
+> This website is for local use only and has not been designed for
+> publicly available production environments. Each game could cost
+> several dollars in credits, and the server trusts data coming
+> from the client.
 
-### Usage
-
-`git clone https://github.com/wintrcat/wintrcat-app-template .`<br>
-`rm -r .git`
+### Local Deployment
 
 #### Scripts
 
@@ -26,6 +22,9 @@ this is mostly just for me but do whatever you want
 
 Stored in `.env` in the root directory:
 
-- `ORIGIN` - origin for production server e.g. `http://localhost:8080`
-- `DEV_ORIGIN` - origin for dev server e.g. `http://localhost:3000`
-- `THREADS` *(optional)* - number of threads to run server on. defaults to number of available cores
+- `ORIGIN` - origin for production server e.g. `http://localhost:8080`.
+- `DEV_ORIGIN` - origin for dev server e.g. `http://localhost:3000`.
+- `THREADS` *(optional)* - number of threads to run server on. defaults to number of available cores.
+- `PIECE_PICK_COUNT` *(optional)* - number of pieces that should give an opinion in a position. defaults to 1.
+- `OPENROUTER_API_KEY` - API key for OpenRouter LLM aggregator.
+- `TTS_API_KEY` - API key for Google Gemini TTS.
