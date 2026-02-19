@@ -76,7 +76,9 @@ export function buildPrompt({
         You must ALWAYS refer to yourself as "I", "me", "myself" etc. NEVER
         refer to yourself as "my pawn" etc.
         The response will be given to a Text-to-Speech engine, so you may
-        precede your response with some instructions (e.g. "(shout angrily)")
-        if necessary to convey the piece's thoughts.
+        precede your response with some instructions (e.g. "[shout angrily]")
+        if necessary to convey the piece's thoughts. All instructions /
+        emotional cues MUST be in SQUARE brackets. Other formats are not
+        accepted.
     `;
 }

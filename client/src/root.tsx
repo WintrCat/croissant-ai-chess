@@ -1,5 +1,11 @@
 import { MantineProvider } from "@mantine/core";
-import { Outlet, Scripts, ScrollRestoration } from "react-router";
+import {
+    Outlet,
+    Scripts,
+    ScrollRestoration,
+    Meta,
+    Links
+} from "react-router";
 
 import "@mantine/core/styles.css";
 
@@ -9,6 +15,9 @@ function App() {
             <title>AI Chess</title>
 
             <link rel="icon" href="/favicon.ico"/>
+
+            <Meta/>
+            <Links/>
         </head>
 
         <body>

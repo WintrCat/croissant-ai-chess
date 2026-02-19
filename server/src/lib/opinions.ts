@@ -1,13 +1,13 @@
 import dotenv from "dotenv";
 import { OpenAI } from "openai";
-import { GoogleGenAI } from "@google/genai";
+import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 import { Chess, Square } from "chessops";
 
 import { LocatedPiece } from "@/types/LocatedPiece";
 import { Opinion } from "@/types/Opinion";
 import { getPieceVoice } from "@/constants/llm-voices";
 import { pieceLabel, buildPrompt } from "./prompt";
-import { pcmToWavDataURL, SAN_REGEX, ttsMoveNotation } from "./audio";
+import { SAN_REGEX, ttsMoveNotation } from "./audio";
 
 dotenv.config({ path: "../.env", quiet: true });
 
@@ -24,7 +24,7 @@ const openaiClient = new OpenAI({
     apiKey: process.env.OPENROUTER_API_KEY
 });
 
-const googleClient = new GoogleGenAI({
+const ttsClient = new ElevenLabsClient({
     apiKey: process.env.TTS_API_KEY
 });
 
@@ -62,10 +62,10 @@ export async function getOpinion({
     const message = llmResponse.choices.at(0)?.message.content;
     if (!message) return;
 
-    // replace all SANs (except ones that are synonymous with squares)
-    // with TTS-pronouncable versions
     let ttsMessage = message;
 
+    // replace all SANs (except ones that are synonymous with squares)
+    // with TTS-pronouncable versions
     const sanMatches = ttsMessage.matchAll(new RegExp(SAN_REGEX, "g"))
         .filter(move => move[0].length > 2)
         .toArray();
@@ -76,6 +76,14 @@ export async function getOpinion({
         );
     }
 
+    // extract all [emotional instructions]
+    const instructionMatches = ttsMessage.matchAll(/\[.+?\]/g)
+        .map(match => match[0]).toArray();
+
+    for (const instructionMatch of instructionMatches) {
+        ttsMessage = ttsMessage.replace(instructionMatch, "");
+    }
+
     // prompt the TTS and get audio
     const pieceVoice = getPieceVoice(model, selectedPiece);
     console.log(
@@ -83,27 +91,24 @@ export async function getOpinion({
         + ` with voice ${pieceVoice}...`
     );
 
-    const speech = await googleClient.models.generateContent({
-        model: "gemini-2.5-flash-preview-tts",
-        contents: [{ text: ttsMessage }],
-        config: {
-            responseModalities: ["AUDIO"],
-            speechConfig: {
-                voiceConfig: {
-                    prebuiltVoiceConfig: { voiceName: pieceVoice }
-                }
-            }
-        }
+    const speech = await ttsClient.textToSpeech.convert(pieceVoice, {
+        text: ttsMessage,
+        modelId: "eleven_turbo_v2_5",
+        outputFormat: "wav_24000",
+        nextText: instructionMatches.join(" ")
     });
 
-    const audio = speech.candidates?.at(0)?.content
-        ?.parts?.at(0)?.inlineData?.data;
-    if (!audio) return;
+    const chunks: Uint8Array[] = [];
+    for await (const byte of speech) {
+        chunks.push(byte);
+    }
+
+    const audio = Buffer.concat(chunks).toString("base64");
 
     // collect in list of stuff
     return {
         ...selectedPiece,
         message: message,
-        audio: pcmToWavDataURL(Buffer.from(audio, "base64"))
+        audio: `data:audio/wav;base64,${audio}`
     };
 }
