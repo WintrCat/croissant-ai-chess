@@ -2,7 +2,7 @@
 
 Chess, but every piece is controlled by a different LLM.
 
-Uses [OpenRouter](https://openrouter.ai/) for API access to a range of LLMs, and [Gemini 2.5 Flash TTS](https://docs.cloud.google.com/text-to-speech/docs/gemini-tts) for text-to-speech.
+Uses [OpenRouter](https://openrouter.ai/) for API access to a range of LLMs, and [ElevenLabs](https://elevenlabs.io/docs/overview/capabilities/text-to-speech) for text-to-speech.
 
 > [!IMPORTANT]
 > This website is for local use only and has not been designed for
@@ -27,4 +27,4 @@ Stored in `.env` in the root directory:
 - `THREADS` *(optional)* - number of threads to run server on. defaults to number of available cores.
 - `PIECE_PICK_COUNT` *(optional)* - number of pieces that should give an opinion in a position. defaults to 1.
 - `OPENROUTER_API_KEY` - API key for OpenRouter LLM aggregator.
-- `TTS_API_KEY` - API key for Google Gemini TTS.
+- `TTS_API_KEY` - API key for ElevenLabs API.
