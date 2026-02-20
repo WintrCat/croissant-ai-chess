@@ -132,8 +132,10 @@ function Board({ onMovePlayed, state, pushState, options }: BoardProps) {
                 setHeld(undefined);
 
                 const from = parseSquare(sourceSquare);
-                const to = targetSquare && parseSquare(targetSquare);
-                if (!from || !to) return false;
+                const to = targetSquare != null 
+                    ? parseSquare(targetSquare)
+                    : undefined;
+                if (from == undefined || to == undefined) return false;
 
                 const dests = state.position.dests(from);
                 if (!dests.has(to)) return false;
@@ -157,8 +159,8 @@ function Board({ onMovePlayed, state, pushState, options }: BoardProps) {
             squareRenderer: ({ square, children }) => {
                 const parsedSquare = parseSquare(square as SquareName);
 
-                const isDestination = held && state.position.dests(held)
-                    .has(parsedSquare);
+                const isDestination = held != undefined
+                    && state.position.dests(held).has(parsedSquare);
                 const hasPiece = !!state.position.board.get(parsedSquare);
                 
                 return <div className={styles.square} style={{
