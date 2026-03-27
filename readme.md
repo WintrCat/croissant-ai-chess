@@ -1,6 +1,8 @@
 ## 🥐 Croissant's AI Piece Chess
 
-Chess, but every piece is controlled by a different LLM.
+Chess, but every piece is controlled by a different LLM. As seen in [Croissant's YouTube video](https://www.youtube.com/watch?v=wYLZ9yQvAhQ).
+
+<img width="839" height="773" alt="image" src="https://github.com/user-attachments/assets/aab90280-5a2c-444e-8f41-0ba3933846b6" />
 
 Uses [OpenRouter](https://openrouter.ai/) for API access to a range of LLMs, and [ElevenLabs](https://elevenlabs.io/docs/overview/capabilities/text-to-speech) for text-to-speech.
 
